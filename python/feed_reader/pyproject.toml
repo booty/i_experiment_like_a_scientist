@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "FeedReader"
+version = "0.1.0"
+description = "A CLI tool for reading feeds."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "typer[all]",   # Typer builds on Click and includes support for modern type hints
+    "requests",     # Example dependency for fetching feeds
+]
+
+[project.scripts]
+feedreader = "feedreader.cli:main"

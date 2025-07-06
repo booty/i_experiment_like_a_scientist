@@ -2,9 +2,10 @@ from __future__ import annotations
 import sys
 import random
 from typing import Optional, Callable
+
 import numpy as np
-from PySide6.QtCore import Qt, QSize
-from PySide6.QtGui import QAction, QDragEnterEvent, QDropEvent
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QAction, QDragEnterEvent, QDropEvent, QFont, QFontMetrics
 from PySide6.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -14,8 +15,45 @@ from PySide6.QtWidgets import (
     QFrame,
     QFileDialog,
     QDialog,
+    QSizePolicy,
 )
 from PySide6.QtCharts import QChart, QChartView, QLineSeries
+
+
+class AutoResizeLabel(QLabel):
+    """QLabel that auto-adjusts font size to fill its content area."""
+
+    def resizeEvent(self, event) -> None:
+        super().resizeEvent(event)
+        self._adjust_font_size()
+
+    def setText(self, text: str) -> None:
+        super().setText(text)
+        self._adjust_font_size()
+
+    def _adjust_font_size(self) -> None:
+        text = self.text()
+        if not text:
+            return
+        # Binary search best point size
+        lo, hi = 1, 500
+        best = lo
+        while lo <= hi:
+            mid = (lo + hi) // 2
+            font = QFont(self.font())
+            font.setPointSize(mid)
+            fm = QFontMetrics(font)
+            if (
+                fm.height() <= self.height()
+                and fm.horizontalAdvance(text) <= self.width()
+            ):
+                best = mid
+                lo = mid + 1
+            else:
+                hi = mid - 1
+        font = QFont(self.font())
+        font.setPointSize(best)
+        super().setFont(font)
 
 
 class FileDropWidget(QLabel):
@@ -58,7 +96,7 @@ class SettingsDialog(QDialog):
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
-        self.setWindowTitle("File Processor")
+        self.setWindowTitle("PTRMS - MassMatrix™")
         self.resize(1280, 720)
 
         # Menu
@@ -74,28 +112,31 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout(central)
         self.setCentralWidget(central)
 
-        # File drop / click area
+        # File drop / click area (always at top)
         self.drop_widget = FileDropWidget(self.process_file)
         layout.addWidget(self.drop_widget)
 
-        # Status color area
+        # Status color area (hidden until processing)
         self.status_frame = QFrame()
         self.status_frame.setFixedHeight(30)
         layout.addWidget(self.status_frame)
+        self.status_frame.hide()
 
-        # Detailed results label
-        self.result_label = QLabel("Awaiting file…")
+        # Detailed results label (hidden until processing)
+        self.result_label = AutoResizeLabel("")
         self.result_label.setWordWrap(True)
+        self.result_label.setAlignment(Qt.AlignCenter)
+        self.result_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         layout.addWidget(self.result_label)
-        self.result_label.hide()
+        # self.result_label.hide()
 
-        # Random-data graph
+        # Random-data graph (hidden until processing)
         self.chart = QChart()
         self.chart.legend().hide()
         self.chart_view = QChartView(self.chart)
         self.chart_view.setMinimumHeight(300)
         layout.addWidget(self.chart_view)
-        self.chart_view.hide()
+        # self.chart_view.hide()
 
         # Initial empty plot
         self._plot_random_data()
@@ -105,21 +146,31 @@ class MainWindow(QMainWindow):
         dlg.exec()
 
     def process_file(self, path: str) -> None:
-        """
-        Stub for real processing. Here we randomly succeed/fail,
-        update color, label, and re-plot random data.
-        """
         success = random.choice([True, False])
-        color = "green" if success else "red"
-        self.status_frame.setStyleSheet(f"background-color: {color};")
-        self.result_label.setText(f"Processed “{path}”: {'OK' if success else 'FAIL'}")
+        # Status bar
+        self.status_frame.setStyleSheet(
+            f"background-color: {'green' if success else 'red'};"
+        )
+        self.status_frame.show()
+
+        # PASS/FAIL label
+        if success:
+            self.result_label.setStyleSheet(
+                "background-color: green; color: lightgreen;"
+            )
+            self.result_label.setText("PASS")
+        else:
+            self.result_label.setStyleSheet("background-color: red; color: lightcoral;")
+            self.result_label.setText("FAIL")
+
         self.result_label.show()
         self.chart_view.show()
+
+        # Update plot with random data
         self._plot_random_data()
 
     def _plot_random_data(self) -> None:
         """Generate random data and plot it in the chart."""
-        # Generate with numpy for performance on large arrays later
         x = np.arange(100)
         y = np.random.random(100)
 
