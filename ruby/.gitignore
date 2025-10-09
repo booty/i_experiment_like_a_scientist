@@ -1,0 +1,107 @@
+# === Rails / Ruby ===
+*.rbc
+capybara-*.html
+.rspec
+/log/*
+/tmp/*
+!/log/.keep
+!/tmp/.keep
+/db/*.sqlite3
+/db/*.sqlite3-journal
+/db/*.sqlite3-*
+/public/system
+/public/uploads
+/public/assets
+/public/packs
+/public/packs-test
+/public/packs-dev
+/node_modules
+/yarn-error.log
+.byebug_history
+/spec/examples.txt
+
+# Ignore any master key, credentials, and encryption files
+/config/master.key
+/config/credentials/*.key
+/config/credentials.yml.enc
+/config/credentials/*.enc
+
+# Ignore application secrets
+.env
+.env.*
+!.env.example
+
+# === Bundler ===
+/.bundle
+/vendor/bundle
+
+# === Rails Assets (Webpacker / Importmaps / Vite) ===
+/app/assets/builds/*
+!/app/assets/builds/.keep
+/public/assets
+/public/packs
+/public/packs-test
+/public/packs-dev
+/public/vite
+/storage/*
+!/storage/.keep
+
+# === Database dumps / migrations artifacts ===
+*.sqlite3
+*.sqlite3-journal
+/db/*.sqlite3
+/db/*.sqlite3-*
+/db/schema_cache.dump
+/db/structure.sql
+/db/development_structure.sql
+
+# === OS ===
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Icon?
+desktop.ini
+
+# === Editors ===
+*.swp
+*.swo
+*~
+.project
+.idea
+.vscode
+*.iml
+
+# === Testing / Coverage ===
+/coverage
+/spec/reports
+/spec/tmp
+/spec/examples.txt
+/test/tmp
+/test/version_tmp
+/tmp
+rerun.txt
+pickle-email-*.html
+
+# === Logs ===
+/log/*
+!/log/.keep
+
+# === Docker / Dev Containers ===
+.docker
+docker-compose.override.yml
+docker-compose.dev.yml
+*.pid
+*.seed
+*.bak
+
+# === CI / Artifacts ===
+/tmp/*
+/build
+/tmp/cache
+*.pid
+
+# === Optional — for local packages or JS ===
+/node_modules/
+/pnpm-lock.yaml
+/package-lock.json
+/yarn-error.log
