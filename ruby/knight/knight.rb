@@ -1,38 +1,30 @@
 # frozen_string_literal: true
 
+Point = Data.define(:x, :y)
+
 BOARD_SIZE = 8
 EMPTY_BOARD = -> { Array.new(BOARD_SIZE) { Array.new(BOARD_SIZE) } }
-
 MOVES = {
-  0 => { x: 2, y: 1 },
-  1 => { x: 2, y: -1 },
-  2 => { x: -2, y: 1 },
-  3 => { x: -2, y: -1 },
-  4 => { x: 1, y: 2 },
-  5 => { x: 1, y: -2 },
-  6 => { x: -1, y: 2 },
-  7 => { x: -1, y: -2 }
+  0 => Point.new(x: 2, y: 1),
+  1 => Point.new(x: 2, y: -1),
+  2 => Point.new(x: -2, y: 1),
+  3 => Point.new(x: -2, y: -1),
+  4 => Point.new(x: 1, y: 2),
+  5 => Point.new(x: 1, y: -2),
+  6 => Point.new(x: -1, y: 2),
+  7 => Point.new(x: -1, y: -2)
 }.freeze
 
 class Knight
-  attr_accessor :board, :curr_xpos, :curr_ypos
+  attr_accessor :board, :position
 
   def possible_moves
     result = []
 
-    0.upto(7) do |move_num|
-      move = MOVES[move_num]
+    0.upto(7) do |move_number|
+      next unless move_in_bounds?(move_number:, board:, position:)
 
-      newx = @curr_xpos + move[:x]
-      newy = @curr_ypos + move[:y]
-
-      puts("move #{move_num} (#{move}): new coords would be #{newx},#{newy}")
-      next if newx.negative?
-      next if newy.negative?
-      next if newx >= BOARD_SIZE
-      next if newy >= BOARD_SIZE
-
-      result << move_num
+      result << move_number
     end
 
     result
@@ -43,13 +35,14 @@ class Knight
   end
 
   def render_board
+    # puts(@board)
     0.upto(BOARD_SIZE - 1) do |y|
       print("#{y} ")
       0.upto(BOARD_SIZE - 1) do |x|
-        symbol = if x == @curr_xpos && y == @curr_ypos
+        symbol = if x == @position.x && y == @position.y
                    "⭐️"
                  else
-                   ""
+                   @board[@position.x][@position.y].to_s
                  end
         print(render_square(contents: symbol, width: 6))
       end
@@ -57,16 +50,30 @@ class Knight
     end
   end
 
-  def initialize(board:, curr_xpos:, curr_ypos:)
+  def initialize(board:, position:)
     @board = board
-    @curr_xpos = curr_xpos
-    @curr_ypos = curr_ypos
+    @position = position
+  end
+
+  private
+
+  def move_in_bounds?(move_number:, board:, position:)
+    move = MOVES[move_number]
+    new_position = Point.new(x: @position.x + move.x, y: @position.y + move.y)
+
+    # puts("move #{move_number} (#{move}): new coords would be #{new_position}")
+    return false if new_position.x.negative?
+    return false if new_position.y.negative?
+    return false if new_position.x >= BOARD_SIZE
+    return false if new_position.y >= BOARD_SIZE
+
+    true
   end
 end
 
 puts("Hello, Guard?")
 
-foo = Knight.new(board: EMPTY_BOARD, curr_xpos: 1, curr_ypos: 2)
+foo = Knight.new(board: EMPTY_BOARD.call, position: Point.new(1, 2))
 
-puts(foo.possible_moves)
+puts("Possible moves: #{foo.possible_moves}")
 puts(foo.render_board)
