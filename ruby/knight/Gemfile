@@ -5,6 +5,7 @@ source "https://rubygems.org"
 group :development, :test do
   gem "guard", "~> 2.19"
   gem "guard-shell", "~> 0.7.2"
+  gem "irb"
   gem "rubocop", require: false
   gem "rubocop-minitest", require: false # optional
   gem "rubocop-performance", require: false # optional

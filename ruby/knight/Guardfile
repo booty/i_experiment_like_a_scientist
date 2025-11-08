@@ -18,8 +18,10 @@
 # Add files and commands to this file, like the example:
 #   watch(%r{file/path}) { `command(s)` }
 #
-guard :shell, all_on_start: false, clear: true do
-  watch(/.+\.rb$/) do
-    `ruby knight.rb`
+guard :shell, clear: true do
+  watch(/(.+)\.rb$/) do |m|
+    file = m[0]            # the full matched filename, e.g. "foo.rb"
+    system("clear")        # optional, keeps output readable
+    system("ruby #{file}")
   end
 end
