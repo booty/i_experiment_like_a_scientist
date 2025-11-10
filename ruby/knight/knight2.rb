@@ -1,11 +1,25 @@
 # frozen_string_literal: true
 
+VERBOSE = true
+
 puts "Hello, from Knight II... ✌️"
 
 class Tour
   attr_accessor :board
 
-  Point = Data.define(:x, :y)
+  Point = Data.define(:x, :y) do
+    def +(other)
+      Point.new(x + other.x, y + other.y)
+    end
+
+    def to_s
+      "Point(#{x},#{y})"
+    end
+
+    def inspect
+      to_s
+    end
+  end
 
   MOVES = {
     0 => Point.new(x: 2, y: 1),
@@ -21,35 +35,67 @@ class Tour
   def initialize(board_size:, initial_x:, initial_y:)
     @board = Array.new(board_size) { Array.new(board_size) }
     @position_history = [Point.new(x: initial_x, y: initial_y)]
+    @possible_next_positions_history = []
   end
 
   def play!
+    backtracking = false
+    move_count = 0
+    backtrack_count = 0
+
+    puts("\n\n\n\n\n\n\n")
+
     until win?
-      # raise "Whoa, shutting down" if move_number > 3
+      move_count += 1
 
-      # Get possible moves
-      pp = possible_positions()
-      chosen_next_position = pp.sample
-      render_state(possible_positions: pp, chosen_next_position:)
+      # raise "Fuck" if move_count > 100
 
-      # If there are no possible moves, backtrack
-      raise "Backtracking not implemented yet" unless chosen_next_position
+      puts("\n          -----[ Turn #{move_count} ]-----") if VERBOSE
+      puts("backtracking:#{backtracking} move_count:#{move_count} backtrack_count:#{backtrack_count}") if VERBOSE
 
-      # If there is a possible move, make that move
+      # Get a list of possible moves
       @board[current_position.x][current_position.y] = move_number()
+      possible_next_positions = if backtracking
+                                  @possible_next_positions_history.pop
+                                else
+                                  possible_next_positions()
+                                end
+      puts("possible_next_positions: #{possible_next_positions}") if VERBOSE
+      next_position = possible_next_positions.pop
 
-      @position_history.push(chosen_next_position)
+      # render_board(chosen_next_position: next_position)
+
+      # If there are no moves, we should backtrack
+      unless next_position
+        # raise "I refuse to backtrack."
+        puts("Will backtrack next turn") if VERBOSE
+        backtracking = true
+        backtrack_count += 1
+        @board[current_position.x][current_position.y] = nil
+        @position_history.pop
+        next
+      end
+
+      # Choose one of the possible moves
+      backtracking = false
+      @position_history.push(next_position)
+      puts("next_position: #{next_position} @position_history: #{@position_history}") if VERBOSE
+      @possible_next_positions_history.push(possible_next_positions)
+
     end
+
+    puts "Looks like we won."
   end
 
   private
 
-  def possible_positions
+  def possible_next_positions
+    puts "Generating new positions"
     result = []
 
     0.upto(7) do |move_number|
       move = MOVES[move_number]
-      new_position = Point.new(x: current_position.x + move.x, y: current_position.y + move.y)
+      new_position = Point.new(x: current_position.x + move.x, y: current_position.y + move.y) # TODO: use overloaded Point#+ operator
       next unless move_in_bounds?(new_position:)
       next unless move_valid?(new_position:)
 
@@ -83,7 +129,9 @@ class Tour
   end
 
   def move_valid?(new_position:)
-    !@board[new_position.x][new_position.y]
+    result = @board[new_position.x][new_position.y]
+    puts("move_valid?(#{new_position}): #{result}")
+    !result
   end
 
   def render_square(contents:, width:)
@@ -107,9 +155,9 @@ class Tour
     end
   end
 
-  def render_state(possible_positions:, chosen_next_position:)
+  def render_state(next_:, chosen_next_position:)
     puts("position_history: #{@position_history}")
-    puts("possible_positions: #{possible_positions}")
+    puts("next_: #{next_}")
     puts("chosen_next_position: #{chosen_next_position}")
     render_board(chosen_next_position:)
   end

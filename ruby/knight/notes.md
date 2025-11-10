@@ -14,8 +14,9 @@
   - Discard moves that revisit a previously visited square
 - If there are valid moves, choose one (random or static)
   - Push the new location onto the stack
+  - Push the list of possible moves onto the stack, minus the one that was chosen
 - If there are no valid moves
-  - Mark the curent square with an "X"
+  - Pop the possible moves from the stack
   - Pop the knight's previous position from the stack
 
 ## Classes / Structures
