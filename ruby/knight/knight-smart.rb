@@ -29,6 +29,28 @@ DELTAS = [
   Point.new(x: -1, y: -2)
 ].freeze
 
+def render_board(board:, position:, new_position:)
+  0.upto(board.length - 1) do |y|
+    # print("#{y} ")
+    0.upto(board[0].length - 1) do |x|
+      symbol = board[x][y].to_s
+      if x == position.x && y == position.y
+        symbol = "*#{symbol}"
+      elsif new_position && x == new_position.x && y == new_position.y
+        symbol = "Next"
+      end
+      # print(render_square(contents: symbol, width: 6))
+      print("[#{symbol.center(4)}]")
+    end
+    puts("\n")
+  end
+end
+
+def render_state(position:, new_position:, legal_moves_with_scores:, move_number:)
+  puts("----------------------- Move #{move_number} -----------------------")
+  puts("position:#{position} new_position:#{new_position} legal_moves_with_scores:#{legal_moves_with_scores}")
+end
+
 # The heuristic here is: choose the move with the lowest number of possible resulting moves
 # returns [[move, score], ...]
 def legal_moves_with_scores(board:, position:, recurse:)
@@ -46,36 +68,46 @@ def legal_moves_with_scores(board:, position:, recurse:)
 
   results = []
   moves.each do |move|
-    submoves = legal_moves_with_scores(board: board, position: move, recurse: false)
-
-    results << [move, submoves.length]
+    results << [
+      move,
+      legal_moves_with_scores(board: board, position: move, recurse: false).length
+    ]
   end
 
   results.sort_by { |x| x[1] }
 end
 
-def tour(board_size:, starting_position:)
+def tour(board_size:, starting_position:, verbose:)
   board = Array.new(board_size) { Array.new(board_size) }
   position_history = [starting_position]
-  temp_move_number = 0
+  move_number = 1
 
-  while position_history.length < (board_size**2) && (temp_move_number < 3000)
-    temp_move_number += 1
+  while position_history.length < (board_size**2)
+    move_number += 1
 
     position = position_history.last
     board[position.x][position.y] = position_history.length
 
     legal_moves_with_scores = legal_moves_with_scores(board: board, position: position, recurse: true)
-    puts("temp_move_number:#{temp_move_number} legal_moves_with_scores:#{legal_moves_with_scores}")
 
-    raise "Backtracking not supported yet" if legal_moves_with_scores.empty?
+    new_position = legal_moves_with_scores.shift[0]
 
-    new_position = legal_moves_with_scores.shift
+    if verbose
+      render_state(position:, new_position:, legal_moves_with_scores:, move_number: move_number)
+      render_board(board:, position:, new_position:)
+    end
 
-    puts("chose move: #{new_position}")
+    raise "Backtracking not supported yet" unless new_position
 
-    position_history << new_position[0]
+    position_history << new_position
+
   end
+
+  puts("cool, we won! #{position_history} (#{position_history.length} moves)")
 end
 
-tour(board_size: 8, starting_position: Point.new(x: 1, y: 2))
+# works w/ no backtracking
+tour(board_size: 8, starting_position: Point.new(x: 1, y: 2), verbose: true)
+
+# Needs backtracking
+# tour(board_size: 8, starting_position: Point.new(x: 1, y: 1))
