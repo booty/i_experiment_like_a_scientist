@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-VERBOSE = true
-
 puts "Hello, from Knight III... ✌️"
 
 Point = Data.define(:x, :y) do
@@ -10,11 +8,15 @@ Point = Data.define(:x, :y) do
   end
 
   def to_s
-    "Point(#{x},#{y})"
+    "(#{x},#{y})"
   end
 
   def inspect
     to_s
+  end
+
+  def inbounds?(size)
+    x.between?(0, size - 1) && y.between?(0, size - 1)
   end
 end
 
@@ -31,7 +33,6 @@ DELTAS = [
 
 def render_board(board:, position:, new_position:)
   0.upto(board.length - 1) do |y|
-    # print("#{y} ")
     0.upto(board[0].length - 1) do |x|
       symbol = board[x][y].to_s
       if x == position.x && y == position.y
@@ -39,42 +40,36 @@ def render_board(board:, position:, new_position:)
       elsif new_position && x == new_position.x && y == new_position.y
         symbol = "Next"
       end
-      # print(render_square(contents: symbol, width: 6))
       print("[#{symbol.center(4)}]")
     end
     puts("\n")
   end
 end
 
-def render_state(position:, new_position:, legal_moves_with_scores:, move_number:)
+def render_state(position:, new_position:, scored_moves:, move_number:)
   puts("----------------------- Move #{move_number} -----------------------")
   puts("position:#{position} new_position:#{new_position} legal_moves_with_scores:#{legal_moves_with_scores}")
 end
 
 # The heuristic here is: choose the move with the lowest number of possible resulting moves
-# returns [[move, score], ...]
-def legal_moves_with_scores(board:, position:, recurse:)
-  moves = []
-  DELTAS.each do |delta|
+def scored_moves(board:, position:, recurse:)
+  moves = DELTAS.filter_map do |delta|
     new_position = position + delta
-    next unless new_position.x.between?(0, board.length - 1) && new_position.y.between?(0, board.length - 1)
 
-    next if board[new_position.x][new_position.y]
+    next unless new_position.inbounds?(board.length)
+    next if board[new_position.x][new_position.y] # knight has already visited
 
-    moves << new_position
+    new_position
   end
 
   return moves.map { |r| [r, 0] } unless recurse
 
-  results = []
-  moves.each do |move|
-    results << [
+  moves.map do |move|
+    [
       move,
-      legal_moves_with_scores(board: board, position: move, recurse: false).length
+      scored_moves(board: board, position: move, recurse: false).length
     ]
-  end
-
-  results.sort_by { |x| x[1] }
+  end.sort_by { |x| x[1] }
 end
 
 def tour(board_size:, starting_position:, verbose:)
@@ -88,26 +83,20 @@ def tour(board_size:, starting_position:, verbose:)
     position = position_history.last
     board[position.x][position.y] = position_history.length
 
-    legal_moves_with_scores = legal_moves_with_scores(board: board, position: position, recurse: true)
-
-    new_position = legal_moves_with_scores.shift[0]
+    scored_moves = scored_moves(board:, position:, recurse: true)
+    new_position = scored_moves.shift&.first
 
     if verbose
-      render_state(position:, new_position:, legal_moves_with_scores:, move_number: move_number)
+      render_state(position:, new_position:, scored_moves:, move_number: move_number)
       render_board(board:, position:, new_position:)
     end
 
     raise "Backtracking not supported yet" unless new_position
 
     position_history << new_position
-
   end
 
-  puts("cool, we won! #{position_history} (#{position_history.length} moves)")
+  puts("Cool, we won! #{position_history.join(' → ')} (#{position_history.length} moves)")
 end
 
-# works w/ no backtracking
-tour(board_size: 8, starting_position: Point.new(x: 1, y: 2), verbose: true)
-
-# Needs backtracking
-# tour(board_size: 8, starting_position: Point.new(x: 1, y: 1))
+tour(board_size: 10, starting_position: Point.new(x: 1, y: 2), verbose: false)
