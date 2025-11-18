@@ -34,14 +34,16 @@ DELTAS = [
 ].freeze
 
 def render_board(board:, position:, new_position:)
-  0.upto(board.length - 1) do |y|
-    0.upto(board[0].length - 1) do |x|
-      symbol = board[x][y].to_s
-      if x == position&.x && y == position&.y
-        symbol = "*#{symbol}"
-      elsif new_position && x == new_position.x && y == new_position.y
-        symbol = "Next"
-      end
+  edge = board.length - 1
+  0.upto(edge) do |y|
+    0.upto(edge) do |x|
+      symbol = if position && x == position.x && y == position.y
+                 "*#{board[x][y]}"
+               elsif new_position && x == new_position.x && y == new_position.y
+                 "Next"
+               else
+                 "."
+               end
       print("[#{symbol.center(4)}]")
     end
     puts("\n")
@@ -84,18 +86,9 @@ def tour(board_size:, starting_position:, verbose:)
   while position_history.length < (board_size**2)
     move_number += 1
 
-    # OLD
-    # position = position_history.last
-    # board[position.x][position.y] = position_history.length
-    # scored_moves = scored_moves(board:, position:, recurse: true)
-    # new_position = scored_moves.shift&.first
-
-    # Mark the board
     if backtracking
-      puts "Backtracking..."
       scored_moves = scored_moves_history.pop
     else
-      board[position_history.last.x][position_history.last.y] = position_history.length
       scored_moves = scored_moves(board:, position: position_history.last, recurse: true)
       scored_moves_history.push(scored_moves)
     end
@@ -109,12 +102,12 @@ def tour(board_size:, starting_position:, verbose:)
 
     if new_position
       backtracking = false
+      position_history << new_position
+      board[new_position.x][new_position.y] = position_history.length
     else
       backtracking = true
-      # raise "Backtracking not supported yet (board_size:#{board_size}, starting position: #{starting_position})"
     end
 
-    position_history << new_position unless backtracking
   end
 
   puts("Cool, we won! #{position_history.join(' → ')} (#{position_history.length} moves)") if verbose
@@ -123,30 +116,30 @@ end
 # Will cause a backtrack
 tour(board_size: 11, starting_position: Point.new(1, 9), verbose: true)
 
-# Benchmark.ips do |bm|
-#   bm.config(warmup: 2, time: 5)
+Benchmark.ips do |bm|
+  bm.config(warmup: 2, time: 5)
 
-#   8.upto(15) do |board_size|
-#     edge = board_size - 1
-#     starting_positions = [
-#       Point.new(x: 0, y: 0),
-#       Point.new(x: 0, y: edge),
-#       Point.new(x: edge, y: 0),
-#       Point.new(x: edge, y: edge),
-#       Point.new(x: 1, y: 1),
-#       Point.new(x: 1, y: edge - 1),
-#       Point.new(x: edge - 1, y: 1),
-#       Point.new(x: edge - 1, y: edge - 1),
-#       Point.new(x: edge / 2, y: edge / 2)
-#     ]
-#     bm.report("Board size: #{board_size} (#{starting_positions.length} starting positions)") do
-#       # puts("Will benchmark board size #{board_size}")
+  8.upto(15) do |board_size|
+    edge = board_size - 1
+    starting_positions = [
+      Point.new(x: 0, y: 0),
+      Point.new(x: 0, y: edge),
+      Point.new(x: edge, y: 0),
+      Point.new(x: edge, y: edge),
+      Point.new(x: 1, y: 1),
+      Point.new(x: 1, y: edge - 1),
+      Point.new(x: edge - 1, y: 1),
+      Point.new(x: edge - 1, y: edge - 1),
+      Point.new(x: edge / 2, y: edge / 2)
+    ]
+    bm.report("Board size: #{board_size} (#{starting_positions.length} starting positions)") do
+      # puts("Will benchmark board size #{board_size}")
 
-#       starting_positions.each do |sp|
-#         tour(board_size: board_size, starting_position: sp, verbose: false)
-#       end
-#     end
-#   end
+      starting_positions.each do |sp|
+        tour(board_size: board_size, starting_position: sp, verbose: false)
+      end
+    end
+  end
 
-#   bm.compare!
-# end
+  bm.compare!
+end
