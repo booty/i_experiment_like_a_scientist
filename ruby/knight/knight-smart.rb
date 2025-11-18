@@ -37,7 +37,7 @@ def render_board(board:, position:, new_position:)
   0.upto(board.length - 1) do |y|
     0.upto(board[0].length - 1) do |x|
       symbol = board[x][y].to_s
-      if x == position.x && y == position.y
+      if x == position&.x && y == position&.y
         symbol = "*#{symbol}"
       elsif new_position && x == new_position.x && y == new_position.y
         symbol = "Next"
@@ -111,10 +111,10 @@ def tour(board_size:, starting_position:, verbose:)
       backtracking = false
     else
       backtracking = true
-      raise "Backtracking not supported yet (board_size:#{board_size}, starting position: #{starting_position})"
+      # raise "Backtracking not supported yet (board_size:#{board_size}, starting position: #{starting_position})"
     end
 
-    position_history << new_position
+    position_history << new_position unless backtracking
   end
 
   puts("Cool, we won! #{position_history.join(' → ')} (#{position_history.length} moves)") if verbose
@@ -123,30 +123,30 @@ end
 # Will cause a backtrack
 tour(board_size: 11, starting_position: Point.new(1, 9), verbose: true)
 
-Benchmark.ips do |bm|
-  bm.config(warmup: 2, time: 5)
+# Benchmark.ips do |bm|
+#   bm.config(warmup: 2, time: 5)
 
-  8.upto(15) do |board_size|
-    edge = board_size - 1
-    starting_positions = [
-      Point.new(x: 0, y: 0),
-      Point.new(x: 0, y: edge),
-      Point.new(x: edge, y: 0),
-      Point.new(x: edge, y: edge),
-      Point.new(x: 1, y: 1),
-      Point.new(x: 1, y: edge - 1),
-      Point.new(x: edge - 1, y: 1),
-      Point.new(x: edge - 1, y: edge - 1),
-      Point.new(x: edge / 2, y: edge / 2)
-    ]
-    bm.report("Board size: #{board_size} (#{starting_positions.length} starting positions)") do
-      # puts("Will benchmark board size #{board_size}")
+#   8.upto(15) do |board_size|
+#     edge = board_size - 1
+#     starting_positions = [
+#       Point.new(x: 0, y: 0),
+#       Point.new(x: 0, y: edge),
+#       Point.new(x: edge, y: 0),
+#       Point.new(x: edge, y: edge),
+#       Point.new(x: 1, y: 1),
+#       Point.new(x: 1, y: edge - 1),
+#       Point.new(x: edge - 1, y: 1),
+#       Point.new(x: edge - 1, y: edge - 1),
+#       Point.new(x: edge / 2, y: edge / 2)
+#     ]
+#     bm.report("Board size: #{board_size} (#{starting_positions.length} starting positions)") do
+#       # puts("Will benchmark board size #{board_size}")
 
-      starting_positions.each do |sp|
-        tour(board_size: board_size, starting_position: sp, verbose: false)
-      end
-    end
-  end
+#       starting_positions.each do |sp|
+#         tour(board_size: board_size, starting_position: sp, verbose: false)
+#       end
+#     end
+#   end
 
-  bm.compare!
-end
+#   bm.compare!
+# end
