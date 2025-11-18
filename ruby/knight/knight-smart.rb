@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "benchmark/ips"
+
 puts "Hello, from Knight III... ✌️"
 
 Point = Data.define(:x, :y) do
@@ -48,7 +50,7 @@ end
 
 def render_state(position:, new_position:, scored_moves:, move_number:)
   puts("----------------------- Move #{move_number} -----------------------")
-  puts("position:#{position} new_position:#{new_position} legal_moves_with_scores:#{legal_moves_with_scores}")
+  puts("position:#{position} new_position:#{new_position} scored_moves:#{scored_moves}")
 end
 
 # The heuristic here is: choose the move with the lowest number of possible resulting moves
@@ -91,12 +93,43 @@ def tour(board_size:, starting_position:, verbose:)
       render_board(board:, position:, new_position:)
     end
 
-    raise "Backtracking not supported yet" unless new_position
+    unless new_position
+      raise "Backtracking not supported yet (board_size:#{board_size}, starting position: #{starting_position})"
+    end
 
     position_history << new_position
   end
 
-  puts("Cool, we won! #{position_history.join(' → ')} (#{position_history.length} moves)")
+  puts("Cool, we won! #{position_history.join(' → ')} (#{position_history.length} moves)") if verbose
 end
 
-tour(board_size: 10, starting_position: Point.new(x: 1, y: 2), verbose: false)
+# Will cause a backtrack
+tour(board_size: 11, starting_position: Point.new(1, 9), verbose: true)
+
+Benchmark.ips do |bm|
+  bm.config(warmup: 2, time: 5)
+
+  8.upto(15) do |board_size|
+    edge = board_size - 1
+    starting_positions = [
+      Point.new(x: 0, y: 0),
+      Point.new(x: 0, y: edge),
+      Point.new(x: edge, y: 0),
+      Point.new(x: edge, y: edge),
+      Point.new(x: 1, y: 1),
+      Point.new(x: 1, y: edge - 1),
+      Point.new(x: edge - 1, y: 1),
+      Point.new(x: edge - 1, y: edge - 1),
+      Point.new(x: edge / 2, y: edge / 2)
+    ]
+    bm.report("Board size: #{board_size} (#{starting_positions.length} starting positions)") do
+      # puts("Will benchmark board size #{board_size}")
+
+      starting_positions.each do |sp|
+        tour(board_size: board_size, starting_position: sp, verbose: false)
+      end
+    end
+  end
+
+  bm.compare!
+end

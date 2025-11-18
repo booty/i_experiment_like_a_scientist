@@ -10,3 +10,5 @@ group :development, :test do
   gem "rubocop-minitest", require: false # optional
   gem "rubocop-performance", require: false # optional
 end
+
+gem "benchmark-ips"
