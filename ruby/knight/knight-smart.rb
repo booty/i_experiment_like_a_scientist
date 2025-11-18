@@ -78,22 +78,39 @@ def tour(board_size:, starting_position:, verbose:)
   board = Array.new(board_size) { Array.new(board_size) }
   position_history = [starting_position]
   move_number = 1
+  scored_moves_history = []
+  backtracking = false
 
   while position_history.length < (board_size**2)
     move_number += 1
 
-    position = position_history.last
-    board[position.x][position.y] = position_history.length
+    # OLD
+    # position = position_history.last
+    # board[position.x][position.y] = position_history.length
+    # scored_moves = scored_moves(board:, position:, recurse: true)
+    # new_position = scored_moves.shift&.first
 
-    scored_moves = scored_moves(board:, position:, recurse: true)
+    # Mark the board
+    if backtracking
+      puts "Backtracking..."
+      scored_moves = scored_moves_history.pop
+    else
+      board[position_history.last.x][position_history.last.y] = position_history.length
+      scored_moves = scored_moves(board:, position: position_history.last, recurse: true)
+      scored_moves_history.push(scored_moves)
+    end
+
     new_position = scored_moves.shift&.first
 
     if verbose
-      render_state(position:, new_position:, scored_moves:, move_number: move_number)
-      render_board(board:, position:, new_position:)
+      render_state(position: position_history.last, new_position:, scored_moves:, move_number: move_number)
+      render_board(board:, position: position_history.last, new_position:)
     end
 
-    unless new_position
+    if new_position
+      backtracking = false
+    else
+      backtracking = true
       raise "Backtracking not supported yet (board_size:#{board_size}, starting position: #{starting_position})"
     end
 
