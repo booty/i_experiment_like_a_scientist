@@ -18,3 +18,6 @@ Style/EmptyMethod:
 
 Style/MethodCallWithoutArgsParentheses:
   Enabled: false
+
+Style/MultilineBlockChain:
+  Enabled: false
