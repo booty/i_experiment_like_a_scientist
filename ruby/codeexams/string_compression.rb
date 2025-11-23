@@ -1,46 +1,56 @@
 # frozen_string_literal: true
 
 class String
-  def rle
+  def rle_encode
     return "" if self == ""
 
-    result = ""
-    last_char = ""
+    result = []
     counter = 1
-    each_char do |c|
-      if c == last_char
-        counter += 1
-      else
-        result << counter.to_s if last_char != "" && counter > 1
-        result << last_char
-        counter = 1
-      end
+    0.upto(length - 1) do |i|
+      next unless i.positive?
 
-      last_char = c
+      puts "  i:#{i} self[i]:#{self[i]}"
+
+      new_char = (self[i] != self[i - 1])
+
+      if new_char
+        result << counter
+        result << self[i - 1]
+        counter = 1
+      else
+        counter += 1
+      end
     end
-    result << counter.to_s if counter > 1
-    result << last_char
-    result
+    result << counter
+    result << self[-1]
+
+    result.join
   end
 
-  def rle2
-    return "" if self == ""
+  def rle_decode
+    result = []
 
-    result = ""
-    counter = 1
-
-    0.upto(length - 1) do |i|
-      if i.positive? && self[i] == self[i - 1]
-        counter += 1
-      else
-        result << counter.to_s if counter > 1
-        result << self[i]
+    tokens = scan(/[A-Za-z]+|\d+/)
+    puts("tokens: #{tokens}")
+    tokens.each_with_index do |token, index|
+      if token.match?(/\d+/)
+        # puts("#{}")
+        result << tokens[index + 1].to_s * token.to_i
       end
     end
-
-    result
+    result.join
   end
 end
 
-message = "Hello Woooooooorld!"
-puts(message.rle2)
+test_strings = ["AAABBBCCC", "", "BROOM", "Zzzz"]
+
+test_strings.each do |s|
+  puts "--- #{s} ---"
+  puts "original: #{s}"
+  encoded = s.rle_encode
+  puts "encoded: #{encoded}"
+  result = encoded.rle_decode
+  puts "encoded+decoded: #{result}"
+  puts(s == result)
+  puts ""
+end

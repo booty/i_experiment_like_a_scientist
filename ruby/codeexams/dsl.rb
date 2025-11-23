@@ -8,36 +8,47 @@ class DSL
     @vars = Hash.new(0)
   end
 
-  def execute(s)
-    s.each_line do |line|
+  def execute(program, debug: false)
+    program.each_line do |line|
       tokens = tokenize_line(line.strip)
-      next if skip?(tokens) # comment or blank?
+      next if skip?(tokens) # comment or blank
 
-      tokens.delete_if { |x| %w[by to].include?(x.downcase) }
+      tokens.delete_if { |x| %w[by to].include?(x.downcase) } # delete optional words
 
-      # puts("tokens: #{tokens} vars:#{@vars} tokens[1]:#{tokens[1]} tokens[3]:#{tokens[3]}")
-      roperand = token_to_value(tokens[2])
-      loperand = token_to_value(tokens[1])
-      result = case tokens[0].downcase
-               when "increment"
-                 loperand + roperand
-               when "decrement"
-                 loperand - roperand
-               when "set"
-                 roperand
-               when "print"
-                 print(loperand)
-               when "println"
-                 puts(loperand)
-               else
-                 raise "Command not recognized: #{tokens[0]}"
-               end
-      # puts("loperand: #{loperand}  roperand: #{roperand} result: #{result}")
-      @vars[tokens[1]] = result if result
+      execute_tokens(tokens, debug)
     end
   end
 
-  # private
+  def execute_tokens(tokens, debug)
+    debugprint("tokens: #{tokens} vars:#{@vars} tokens[1]:#{tokens[1]} tokens[3]:#{tokens[3]}", debug)
+    roperand = token_to_value(tokens[2])
+    loperand = token_to_value(tokens[1])
+    result = case tokens[0].downcase
+             when "increment"
+               loperand + roperand
+             when "decrement"
+               loperand - roperand
+             when "set"
+               roperand
+             when "print"
+               print(loperand)
+             when "println"
+               puts(loperand)
+             else
+               raise "Command not recognized: #{tokens[0]}"
+             end
+    debugprint("loperand: #{loperand}  roperand: #{roperand} result: #{result}", debug)
+    @vars[tokens[1]] = result if result
+  end
+
+  private
+
+  def debugprint(msg, debug)
+    return unless debug
+
+    puts("[#{msg}]")
+  end
+
   def get_or_create_variable(token)
     @vars[token] || 0
   end
@@ -46,36 +57,23 @@ class DSL
     true if line.length == 0 or line[0][0] == "#"
   end
 
-  def validate_line!(tokens)
-    true # todo
-  end
-
   def tokenize_line(line)
     line.scan(TOKENIZE_REGEX)
   end
 
   def valid_string_literal?(token)
-    # puts("[jbootz] token is #{token}")
     token[0] == "\"" && token[-1] == "\""
   end
 
   def valid_numeric_literal?(token)
-    # lol kludge
-    token.to_i.to_s == token
+    (token.to_i.to_s == token) or (token.to_f.to_s == token) # lol kludge
   end
-
-  # def valid_variable_identifier?(identifier)
-  #   # must begin with alphanumeric
-  #   str.match?(VALID_IDENTIFIER_REGEX)
-  # end
 
   def token_to_value(token)
     return nil if token.nil?
-    return token.to_i if valid_numeric_literal?(token)
-
+    return token.to_f if valid_numeric_literal?(token)
     return token[1..-2] if valid_string_literal?(token)
 
-    # puts("do we have a var named #{token}?")
     @vars[token] || 0
   end
 end
@@ -119,4 +117,11 @@ badinput3 = <<BADINPUT
   SET foo 666
 BADINPUT
 
-DSL.new.execute(input0)
+float = <<FLOAT
+  set myfloat 43.3
+  println myfloat
+  increment myfloat by 0.1
+  println myfloat
+FLOAT
+
+DSL.new.execute(float, debug: true)
