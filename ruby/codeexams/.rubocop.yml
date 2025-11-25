@@ -21,3 +21,7 @@ Style/MethodCallWithoutArgsParentheses:
 
 Style/MultilineBlockChain:
   Enabled: false
+
+Metrics/MethodLength:
+  Enabled: true
+  Max: 20
