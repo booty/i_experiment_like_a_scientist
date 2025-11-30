@@ -15,33 +15,33 @@
 # deep_symbolize({ "a" => { "b" => [ { "c" => 1 } ] } })
 
 def deep_symbolize(obj)
-  if obj.is_a?(Hash)
-    obj.keys.each do |k|
-      unless k.is_a?(Symbol)
-        # convert the key
-        v = obj[k]
-        new_k = k.to_sym
-        obj[new_k] = v
-        obj.delete(k)
-        k = new_k
-      end
+  # Nothing to do :-)
+  return obj unless [Hash, Array].include?(obj.class)
 
-      v = obj[k]
-
-      # puts "  #{v.class} #{v.class === Hash}"
-      case v
-      when Array, Hash
-        # puts "  will deep_symbolize #{v}"
-        obj[k] = deep_symbolize(v)
-      end
+  if obj.is_a?(Array)
+    obj.each_index do |i|
+      obj[i] = deep_symbolize(obj[i])
     end
     return obj
   end
 
-  return obj unless obj.is_a?(Array)
+  obj.keys.each do |k|
+    unless k.is_a?(Symbol)
+      # convert the key
+      v = obj[k]
+      new_k = k.to_sym
+      obj[new_k] = v
+      obj.delete(k)
+      k = new_k
+    end
 
-  obj.each_index do |i|
-    obj[i] = deep_symbolize(obj[i])
+    v = obj[k]
+
+    # puts "  #{v.class} #{v.class === Hash}"
+    case v
+    when Array, Hash
+      obj[k] = deep_symbolize(v)
+    end
   end
   obj
 end
@@ -59,5 +59,5 @@ inputs = [
 
 inputs.each do |x|
   puts "input: #{x}"
-  puts "output: #{deep_symbolize(x)}"
+  puts "output: #{deep_symbolize(x)}\n\n"
 end
