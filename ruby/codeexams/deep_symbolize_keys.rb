@@ -23,12 +23,26 @@ def deep_symbolize(obj)
 
   # obj.each do |k, v|
   obj.keys.each do |k|
-    next if k.is_a?(Symbol)
+    # replace the key if it needs replacing
+    # raise "Unknown key type: #{k.class}" unless k.is_a?(String)
 
-    raise "Unknown key type: #{k.class}" unless k.is_a?(String)
+    unless k.is_a?(Symbol)
+      # convert the key
+      v = obj[k]
+      new_k = k.to_sym
+      obj[new_k] = v
+      obj.delete(k)
+      k = new_k
+    end
 
-    obj[k.to_sym] = obj[k]
-    obj.delete(k)
+    puts ""
+
+    # do the deep part
+    # case v.class
+
+    # when String, Hash
+    #   deep_symbolize(v)
+    # end
   end
   obj
 end
