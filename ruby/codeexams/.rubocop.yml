@@ -1,7 +1,7 @@
-require:
-  - rubocop-performance
-  # - rubocop-rails
-  # - rubocop-minitest
+plugins: rubocop-performance
+
+AllCops:
+  NewCops: enable
 
 Style/StringLiterals:
   Description: "Checks if uses of quotes match the configured preference."
@@ -27,7 +27,17 @@ Metrics/MethodLength:
   Max: 20
 
 Style/WhileUntilModifier:
-  Enabled: false
+  Enabled: true
+  AutoCorrect: false
 
 Style/IfUnlessModifier:
-  Enabled: false
+  Enabled: true
+  AutoCorrect: false
+# Style/Next:
+#   Enabled: false
+
+# Style/ReturnNil:
+#   Enabled: false
+
+# Style/GuardClause:
+#   Enabled: false
