@@ -37,25 +37,30 @@ def merge_intervals(input)
   sorted = input.sort_by { |x| x[0] }
   result = []
 
-  streak_start = 0
-  i = 1
+  curr = nil
 
-  # puts("sorted:#{sorted}")
+  sorted.each_with_index do |a, idx|
+    # puts("idx:#{idx} a:#{a} curr:#{curr}")
 
-  while i <= input.length
-    a_current = sorted[i]
-    a_prev = sorted[i - 1]
-    a_start = sorted[streak_start]
-
-    # otherwise, merge sorted[streak_start] and sorted[i] and push it to the result
-    # puts("i:#{i} a_start:#{a_start} a_prev:#{a_prev} a_current:#{a_current} streak_start=#{streak_start}")
-    unless a_current && ((a_current[0] <= a_prev[1]) || (a_current[1] <= a_start[1]))
-      result << [a_start[0], [a_prev[1], a_start[1]].max]
-      streak_start = i
+    if idx.zero?
+      curr = a.dup
+      next
     end
-    i += 1
-  end
 
+    if a[0] <= curr[1]
+      # puts("  on a roll")
+      curr[0] = [curr[0], a[0]].min
+      curr[1] = [curr[1], a[1]].max
+    else
+      # puts("  discontinuity, will push #{curr}")
+      result << curr
+      curr = a.dup
+    end
+    if idx == input.length - 1
+      # puts("  this is the end")
+      result << curr
+    end
+  end
   result
 end
 
@@ -105,6 +110,14 @@ test_cases = [
   {
     input: [[1, 1], [1, 2], [3, 3]],
     output: [[1, 2], [3, 3]]
+  },
+  {
+    input: [[1, 10], [2, 3], [4, 5], [9, 12]],
+    output: [[1, 12]]
+  },
+  {
+    input: [[1, 10], [2, 20], [3, 15]],
+    output: [[1, 20]]
   }
 ]
 
@@ -112,7 +125,11 @@ test_cases.each do |tc|
   # next unless tc[:use]
 
   puts("\n---- Case: #{tc[:input]} ----")
+  # Make sure we're not mutating
+  tc[:input].freeze
+  tc[:input].each(&:freeze)
   actual = merge_intervals(tc[:input])
+
   pass = actual == tc[:output]
   puts("expected: #{tc[:output]}")
   puts("actual: #{actual} #{tc[:output] == actual ? '✅' : '❌'}")
