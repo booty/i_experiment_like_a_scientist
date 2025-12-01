@@ -25,3 +25,9 @@ Style/MultilineBlockChain:
 Metrics/MethodLength:
   Enabled: true
   Max: 20
+
+Style/WhileUntilModifier:
+  Enabled: false
+
+Style/IfUnlessModifier:
+  Enabled: false
