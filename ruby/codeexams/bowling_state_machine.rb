@@ -17,6 +17,7 @@ require "minitest/autorun"
 class BowlingGame
   class RollingWhenGameOver < ArgumentError; end
   class InvalidPinCount < ArgumentError; end
+  class InvalidRoll < ArgumentError; end
 
   def initialize
     @current_frame = []
@@ -24,27 +25,21 @@ class BowlingGame
   end
 
   def roll(pins)
-    Array(pins).each do |p|
+    pins_sanitized = Array(pins).select { |x| x.is_a?(Integer) && x.between?(0, 10) }
+    if pins_sanitized != Array(pins)
+      raise InvalidRoll,
+            "All rolls must be integers, or arrays of integers, between 0 and 10"
+    end
+
+    Array(pins_sanitized).each do |p|
       single_roll(p)
     end
-  end
-
-  def state
-    {
-      "Frame history": @frame_history,
-      "Current frame": @current_frame,
-      "Current frame number": frame_number,
-      "Frame scores": scores,
-      Score: score,
-      "Game over": game_over?
-    }
   end
 
   def scores
     result = [@current_frame.sum]
     @frame_history.each_with_index do |frame, idx|
       next_rolls = (@frame_history[(idx + 1)..] + @current_frame).flatten
-      # puts "idx:#{idx} next_rolls:#{next_rolls}"
       result << if frame == [10] # strike
                   (10 + next_rolls[0].to_i + next_rolls[1].to_i)
                 elsif frame.sum == 10 # spare
@@ -66,9 +61,24 @@ class BowlingGame
 
   private
 
+  def close_frame
+    @frame_history << @current_frame.dup
+    @current_frame = []
+  end
+
+  def debug
+    {
+      frame_history: @frame_history,
+      current_frame: @current_frame,
+      frame_number: frame_number,
+      scores: scores,
+      score: score,
+      game_over?: game_over?
+    }
+  end
+
   def single_roll(pins)
     raise RollingWhenGameOver, "Game is over" if game_over?
-    raise InvalidPinCount, "You can't knock down #{pins} at once" if pins > 10
 
     frame_number == 10 ? single_roll_10th_frame(pins) : single_roll_normal_frame(pins)
   end
@@ -81,20 +91,16 @@ class BowlingGame
 
     return unless @current_frame.sum == 10 || @current_frame.length == 2
 
-    @frame_history << @current_frame.dup
-    @current_frame = []
+    close_frame
   end
 
   def single_roll_10th_frame(pins)
-    # TODO: sanity checking, how many pins are standing?
-
     pins_down = @current_frame.sum
     pins_standing = if (pins_down % 10).zero?
                       10
                     else
                       10 - (pins_down % 10)
                     end
-    # puts "you rolled: #{pins} pins_down: #{pins_down} @pins_standing: #{pins_standing} @current_frame: #{@current_frame} rolls_allowed: #{rolls_allowed}"
 
     if pins > pins_standing
       raise InvalidPinCount, "Can't knock down #{pins} pins if only #{pins_standing} remain"
@@ -105,9 +111,7 @@ class BowlingGame
 
     return unless @current_frame.length == rolls_allowed
 
-    # puts "@current_frame:#{@current_frame}, rolls_allowed=#{rolls_allowed}"
-    @frame_history << @current_frame.dup
-    @current_frame = []
+    close_frame()
   end
 
   def frame_number
@@ -119,6 +123,17 @@ class TestBowlingGame < Minitest::Test
   NINE_PERFECT_FRAMES = Array.new(9) { 10 }
   NINE_LOUSY_FRAMES = Array.new(18) { 1 }
   PERFECT_GAME = Array.new(12) { 10 }
+
+  def test_invalid_rolls
+    g = BowlingGame.new
+    assert_raises(BowlingGame::InvalidRoll) { g.roll(nil) }
+    assert_raises(BowlingGame::InvalidRoll) { g.roll("foo") }
+    assert_raises(BowlingGame::InvalidRoll) { g.roll(5.5) }
+    assert_raises(BowlingGame::InvalidRoll) { g.roll(-1) }
+    assert_raises(BowlingGame::InvalidRoll) { g.roll(11) }
+    assert_raises(BowlingGame::InvalidRoll) { g.roll([1, 999]) }
+    assert_raises(BowlingGame::InvalidRoll) { g.roll([1, "foo"]) }
+  end
 
   def test_rolling_when_game_over_raises_open_10th
     game = BowlingGame.new
@@ -140,7 +155,6 @@ class TestBowlingGame < Minitest::Test
     game.roll(NINE_PERFECT_FRAMES)
     game.roll(9)
     game.roll(1)
-    puts game.state
     game.roll(1)
     assert_raises(BowlingGame::RollingWhenGameOver) do
       game.roll(1)
@@ -183,14 +197,12 @@ class TestBowlingGame < Minitest::Test
 
   def test_invalid_pin_counts
     g = BowlingGame.new
+
     g.roll(1)
     assert_raises(BowlingGame::InvalidPinCount) do
       g.roll(10)
     end
     g.roll(1)
-    assert_raises(BowlingGame::InvalidPinCount) do
-      g.roll(999)
-    end
 
     g2 = BowlingGame.new
     g2.roll(NINE_PERFECT_FRAMES)
