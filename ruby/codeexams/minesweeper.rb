@@ -97,12 +97,13 @@ TESTINPUT_MINI = <<~TESTINPUT_MINI
 TESTINPUT_MINI
 
 def game(width, height, lines)
+  result = lines.dup
   y_max = height - 1
   x_max = width - 1
 
   (0..y_max).each do |y|
     (0..x_max).each do |x|
-      next if lines[y][x] == "*"
+      next if result[y][x] == "*"
 
       count = 0
       (-1..1).each do |y_offset|
@@ -115,14 +116,14 @@ def game(width, height, lines)
           next unless new_x.between?(0, x_max)
           next if [new_y, new_x] == [y, x]
 
-          content = lines[new_y][new_x]
+          content = result[new_y][new_x]
           count += 1 if content == "*"
         end
       end
-      lines[y][x] = count.to_s
+      result[y][x] = count.to_s
     end
   end
-  puts lines
+  result
 end
 
 def games(input)
@@ -136,8 +137,9 @@ def games(input)
     break if [x, y] == [0, 0]
 
     field += 1
-    puts("\nField ##{field}")
-    game(x, y, lines.shift(y))
+    puts if field > 1
+    puts("Field ##{field}")
+    puts game(x, y, lines.shift(y))
 
   end
 end
