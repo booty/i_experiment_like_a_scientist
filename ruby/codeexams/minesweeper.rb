@@ -96,8 +96,10 @@ TESTINPUT_MINI = <<~TESTINPUT_MINI
   0 0
 TESTINPUT_MINI
 
+OFFSETS = [-1, 0, 1].product([-1, 0, 1]) - [[0, 0]]
+
 def game(width, height, lines)
-  result = lines.dup
+  result = lines.map(&:dup)
   y_max = height - 1
   x_max = width - 1
 
@@ -106,20 +108,17 @@ def game(width, height, lines)
       next if result[y][x] == "*"
 
       count = 0
-      (-1..1).each do |y_offset|
-        new_y = y + y_offset
-        next unless new_y.between?(0, y_max)
 
-        (-1..1).each do |x_offset|
-          new_x = x + x_offset
+      OFFSETS.each do |dy, dx|
+        ny = y + dy
+        nx = x + dx
 
-          next unless new_x.between?(0, x_max)
-          next if [new_y, new_x] == [y, x]
+        next unless ny.between?(0, y_max)
+        next unless nx.between?(0, x_max)
 
-          content = result[new_y][new_x]
-          count += 1 if content == "*"
-        end
+        count += 1 if lines[ny][nx] == "*"
       end
+
       result[y][x] = count.to_s
     end
   end
@@ -134,7 +133,7 @@ def games(input)
 
     y, x = line.split(" ").map.each(&:to_i)
 
-    break if [x, y] == [0, 0]
+    break if x.zero? && y.zero?
 
     field += 1
     puts if field > 1
