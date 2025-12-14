@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "prettyprint"
-
 # This Kata was posted as the problem to be solved in a “self-documenting code contest”.
 #
 # The results of the code contest can be found here:
@@ -28,56 +26,85 @@ def get_wordlist(path)
   File.readlines(path).map(&:chomp).sort
 end
 
-def string_exists_in_wordlist(wordlist:, target:)
-  wordlist.bsearch { |x| x >= target } == target
-end
-
-def find_anagrams(chars:, wordlist:, anagram_cache:)
-  cached_result = anagram_cache[chars]
-  return cached_result unless cached_result.nil?
-
-  result = chars.permutation.each_with_object([]) do |perm, result|
-    joined = perm.join
-    result << joined if string_exists_in_wordlist(wordlist:, target: joined)
+def subtract_hash(h1, h2)
+  h2.each_with_object(h1.dup) do |item, result|
+    h2_key = item[0]
+    h2_value = item[1]
+    result[h2_key] = result[h2_key].to_i - h2_value
   end
-
-  anagram_cache[chars] = result
 end
 
-def find_two_word_anagrams(chars:, wordlist:)
-  anagram_cache = {}
+DEBUG_COMBOS = [%w[af rt], %w[rt af]]
 
-  chars.permutation.each_with_object(Set.new) do |perm, results|
-    0.upto(perm.length - 2) do |cut_after|
-      slice1 = perm[0..cut_after]
-      slice2 = perm[(cut_after + 1)..]
+def find_two_word_anagrams_v2(word:, wordlist:)
+  start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+  results = Set.new
 
-      anagrams_for_slice1 = find_anagrams(chars: slice1, wordlist:, anagram_cache:)
+  wordlist_length = wordlist.length
+  word_length = word.length
+  word_chars = word.chars
+  word_tally = word_chars.tally
 
-      next if anagrams_for_slice1.empty?
+  inner_loop_start_count = 0
+  inner_loop_end_count = 0
+  inner_loop_middle_count = 0
+  # debug = false
 
-      anagrams_for_slice2 = find_anagrams(chars: slice2, wordlist:, anagram_cache:)
+  wordlist.sort_by(&:length).each_with_index do |wordlist_word, outer_index|
+    if outer_index % 1000 == 0
+      end_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      elapsed = end_time - start_time
+      puts("outer loop:#{outer_index}/#{wordlist_length} elapsed:#{elapsed.round(4)} seconds")
+    end
+    break if wordlist_word.length > word_length / 2
 
-      next if anagrams_for_slice2.empty?
+    # next if answer_cache.include?(wordlist_word)
 
-      next if slice2.length > slice1.length
+    wordlist_word_chars = wordlist_word.chars
+    # next if (wordlist_word_chars - word_chars).any? # TODO: helpful?
 
-      foo = anagrams_for_slice1.product(anagrams_for_slice2).map(&:sort)
+    wordlist_word_tally = wordlist_word_chars.tally
 
-      # puts("foo:#{foo}")
+    remaining_letters_tally = subtract_hash(word_tally, wordlist_word_tally)
 
-      results.merge(foo)
+    next if remaining_letters_tally.any? { |k, v| v.negative? }
+
+    next unless remaining_letters_tally.any? { |k, v| v.positive? }
+
+    # puts "wordlist_word:#{wordlist_word} remaining_letters_tally:#{remaining_letters_tally}"
+
+    remaining_letters_count = remaining_letters_tally.values.sum
+    wordlist.each do |wordlist_second_word|
+      inner_loop_start_count += 1
+      # debug = DEBUG_COMBOS.include?([wordlist_word,
+      #                                wordlist_second_word]) || DEBUG_COMBOS.include?([wordlist_second_word,
+      #                                                                                 wordlist_word])
+      next unless wordlist_second_word.length == remaining_letters_count
+      break if wordlist_second_word.length > remaining_letters_count
+
+      inner_loop_middle_count += 1
+      remaining_letters_tally2 = subtract_hash(remaining_letters_tally, wordlist_second_word.chars.tally)
+
+      # puts "  wordlist_second_word:#{wordlist_second_word} answer_cache:#{answer_cache}" if debug
+
+      next unless remaining_letters_tally2.all? { |k, v| v.zero? }
+
+      results.add([wordlist_word, wordlist_second_word].sort)
+      # answer_cache.add(wordlist_second_word)
+      inner_loop_end_count += 1
     end
   end
+  # puts("inner_loop_start_count:#{inner_loop_start_count} inner_loop_middle_count:#{inner_loop_middle_count} inner_loop_end_count:#{inner_loop_end_count}")
+  results
 end
 
 wordlist = get_wordlist("words_alpha_sorted.txt")
 puts "Got #{wordlist.length} entries in the wordlist"
 
-%w[laptop].each do |word|
+%w[documenting].each do |word|
   start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
-  answer = find_two_word_anagrams(chars: word.chars, wordlist:)
+  answer = find_two_word_anagrams_v2(word:, wordlist:)
   puts "Found #{answer.length} results: #{answer.sort}"
 
   end_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
