@@ -34,9 +34,14 @@ def subtract_hash(h1, h2)
   end
 end
 
-DEBUG_COMBOS = [%w[af rt], %w[rt af]]
+DEBUG_WORDS = %w[lap top]
+
+def tally(word:, tallycache:)
+  tallycache[word] ||= word.chars.tally
+end
 
 def find_two_word_anagrams_v2(word:, wordlist:)
+  word = word.downcase
   start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
   results = Set.new
 
@@ -44,28 +49,26 @@ def find_two_word_anagrams_v2(word:, wordlist:)
   word_length = word.length
   word_chars = word.chars
   word_tally = word_chars.tally
+  tallycache = {}
+  debug = false
 
-  inner_loop_start_count = 0
-  inner_loop_end_count = 0
-  inner_loop_middle_count = 0
-  # debug = false
+  wordlist_filtered_sorted =
+    wordlist
+    .select { |x| x.length < word_length }
+    .map(&:downcase)
+    .sort_by(&:length)
 
-  wordlist_filtered_sorted = wordlist.select { |x| x.length < word_length }.sort_by(&:length)
+  words_by_length = wordlist_filtered_sorted.group_by(&:length)
 
-  wordlist_filtered_sorted.each_with_index do |wordlist_word, outer_index|
+  wordlist_filtered_sorted.each_with_index do |answer1, outer_index|
     if outer_index % 1000 == 0
       end_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       elapsed = end_time - start_time
       puts("outer loop:#{outer_index}/#{wordlist_filtered_sorted.length} elapsed:#{elapsed.round(4)} seconds")
     end
-    break if wordlist_word.length > word_length / 2
+    break if answer1.length > word_length / 2
 
-    # next if answer_cache.include?(wordlist_word)
-
-    wordlist_word_chars = wordlist_word.chars
-    # next if (wordlist_word_chars - word_chars).any? # TODO: helpful?
-
-    wordlist_word_tally = wordlist_word_chars.tally
+    wordlist_word_tally = tally(word: answer1, tallycache:) # wordlist_word_chars.tally
 
     remaining_letters_tally = subtract_hash(word_tally, wordlist_word_tally)
 
@@ -73,41 +76,31 @@ def find_two_word_anagrams_v2(word:, wordlist:)
 
     next unless remaining_letters_tally.any? { |k, v| v.positive? }
 
-    # puts "wordlist_word:#{wordlist_word} remaining_letters_tally:#{remaining_letters_tally}"
-
     remaining_letters_count = remaining_letters_tally.values.sum
-    wordlist_filtered_sorted.each do |wordlist_second_word|
-      inner_loop_start_count += 1
-      # debug = DEBUG_COMBOS.include?([wordlist_word,
-      #                                wordlist_second_word]) || DEBUG_COMBOS.include?([wordlist_second_word,
-      #                                                                                 wordlist_word])
-      break if wordlist_second_word.length > remaining_letters_count
-      next unless wordlist_second_word.length == remaining_letters_count
+    (words_by_length[remaining_letters_count] || []).each do |answer2|
+      debug = DEBUG_WORDS.include?(answer2)
 
-      inner_loop_middle_count += 1
-      remaining_letters_tally2 = subtract_hash(remaining_letters_tally, wordlist_second_word.chars.tally)
+      remaining_letters_tally2 = subtract_hash(remaining_letters_tally, tally(word: answer2, tallycache:))
 
-      # puts "  wordlist_second_word:#{wordlist_second_word} answer_cache:#{answer_cache}" if debug
+      # puts "  outer_index:#{outer_index} answer1:#{answer1} answer2:#{answer2}" if debug
 
       next unless remaining_letters_tally2.all? { |k, v| v.zero? }
 
-      results.add([wordlist_word, wordlist_second_word].sort)
-      # answer_cache.add(wordlist_second_word)
-      inner_loop_end_count += 1
+      # puts "  success:#{[answer1, answer2]}"
+      results.add([answer1, answer2].sort)
     end
   end
-  puts("inner_loop_start_count:#{inner_loop_start_count} inner_loop_middle_count:#{inner_loop_middle_count} inner_loop_end_count:#{inner_loop_end_count}")
-  results
+  results.sort
 end
 
 wordlist = get_wordlist("words_alpha_sorted.txt")
 puts "Got #{wordlist.length} entries in the wordlist"
 
-%w[laptop].each do |word|
+%w[documenting].each do |word|
   start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
   answer = find_two_word_anagrams_v2(word:, wordlist:)
-  puts "Found #{answer.length} results: #{answer.sort}"
+  puts "Found #{answer.length} results: #{answer}"
 
   end_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
   elapsed = end_time - start_time
