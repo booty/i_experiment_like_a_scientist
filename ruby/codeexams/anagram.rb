@@ -31,7 +31,14 @@ def subtract_hash(h1, h2)
     h2_key = item[0]
     h2_value = item[1]
     result[h2_key] = result[h2_key].to_i - h2_value
+  end.reject { |k, v| v.zero? }
+end
+
+def letters_match(tally1, tally2)
+  tally2.each do |tally2_key, tally2_value|
+    return false unless tally1[tally2_key].to_i == tally2_value
   end
+  true
 end
 
 DEBUG_WORDS = %w[lap top]
@@ -60,6 +67,8 @@ def find_two_word_anagrams_v2(word:, wordlist:)
 
   words_by_length = wordlist_filtered_sorted.group_by(&:length)
 
+  # outer_wordlist = wordlist_filtered_sorted.select { |x| x.include?(word[0]) }
+
   wordlist_filtered_sorted.each_with_index do |answer1, outer_index|
     if outer_index % 1000 == 0
       end_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
@@ -78,16 +87,9 @@ def find_two_word_anagrams_v2(word:, wordlist:)
 
     remaining_letters_count = remaining_letters_tally.values.sum
     (words_by_length[remaining_letters_count] || []).each do |answer2|
-      debug = DEBUG_WORDS.include?(answer2)
-
-      remaining_letters_tally2 = subtract_hash(remaining_letters_tally, tally(word: answer2, tallycache:))
-
-      # puts "  outer_index:#{outer_index} answer1:#{answer1} answer2:#{answer2}" if debug
-
-      next unless remaining_letters_tally2.all? { |k, v| v.zero? }
-
-      # puts "  success:#{[answer1, answer2]}"
-      results.add([answer1, answer2].sort)
+      answer_2_tally = tally(word: answer2, tallycache:)
+      # binding.irb if answer1 == "lap" && answer2 == "top"
+      results.add([answer1, answer2].sort) if remaining_letters_tally == answer_2_tally
     end
   end
   results.sort
