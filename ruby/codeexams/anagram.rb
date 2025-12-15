@@ -26,83 +26,57 @@ def get_wordlist_by_length(path)
   File.readlines(path).map(&:chomp).sort_by(&:length).map(&:downcase)
 end
 
-# def tally(word:, tallycache:)
-#   tallycache[word] ||= word.chars.tally
-# end
+def letter_count_tally(word:, tally_cache:)
+  return tally_cache[word] if tally_cache[word]
 
-# # converts a word to a histogram stored in a standard ruby array
-# def tally_array(word:, tally_array_cache:)
-#   return tally_array_cache[word] if tally_array_cache[word]
-
-#   result = Array.new(26) { 0 }
-#   word.chars.each do |c|
-#     result[c.ord - 97] += 1
-#   rescue StandardError => e
-#     puts "failed to calculate ord for #{c}"
-#     raise e
-#   end
-#   tally_array_cache[word] = result
-# end
-
-def tally_buff(word:, tally_array_cache:)
-  return tally_array_cache[word] if tally_array_cache[word]
-
-  buf = "\x00" * 26
-  buf.force_encoding(Encoding::BINARY)
+  stringbuffer = "\x00" * 26
+  stringbuffer.force_encoding(Encoding::BINARY)
 
   word.chars.each do |c|
     pos = c.ord - 97
-    buf.setbyte(pos, buf.getbyte(pos) + 1)
+    stringbuffer.setbyte(pos, stringbuffer.getbyte(pos) + 1)
   end
 
-  tally_array_cache[word] = buf
+  tally_cache[word] = stringbuffer
 end
 
-RANGE = (0..25)
-# def subtract_bufs(ary1, ary2)
-#   result = Array.new(26)
-#   RANGE.each do |idx|
-#     return nil if (result[idx] = ary1[idx] - ary2[idx]).negative?
-#   end
-#   result
-# end
+def remaining_letter_count_tally(stringbuffer1, stringbuffer2)
+  stringbuffer_result = nil
 
-def subtract_buffs(buf1, buf2)
-  result = "\x00" * 26
-  result.force_encoding(Encoding::BINARY)
+  i = 0
+  while i < 26
+    current_value = stringbuffer1.getbyte(i) - stringbuffer2.getbyte(i)
+    return if current_value.negative?
 
-  RANGE.each do |pos|
-    val = buf1.getbyte(pos) - buf2.getbyte(pos)
-    return nil if val.negative?
+    stringbuffer_result ||= "\0".b * 26
 
-    result.setbyte(pos, val)
+    stringbuffer_result.setbyte(i, current_value)
+    i += 1
   end
-  result
+  stringbuffer_result
 end
 
-def find_two_word_anagrams_v2(word:, wordlist:)
+def find_two_word_anagrams(word:, wordlist:)
   word = word.downcase
+
   results = Set.new
-
   word_length = word.length
-  tally_array_cache = {}
-  word_tally = tally_buff(word:, tally_array_cache:)
-  debug = false
+  tally_cache = {}
+  word_tally = letter_count_tally(word:, tally_cache:)
 
-  wordlist_filtered_sorted =
+  candidates_sorted_by_length =
     wordlist
-    .select { |x| x.length < word_length }.sort_by { |x| x.length }
+    .select { |x| x.length < word_length }
+  # .sort_by(&:length)
 
-  words_by_length = wordlist_filtered_sorted.group_by(&:length)
+  candidates_grouped_by_length = candidates_sorted_by_length.group_by(&:length)
 
-  puts("Will examine #{wordlist_filtered_sorted.length} words in wordlist_filtered_sorted")
-
-  wordlist_filtered_sorted.each_with_index do |answer1, outer_index|
+  candidates_sorted_by_length.each_with_index do |answer1, outer_index|
     break if answer1.length > word_length / 2
 
-    answer1_tally = tally_buff(word: answer1, tally_array_cache:)
+    answer1_tally = letter_count_tally(word: answer1, tally_cache:)
 
-    remaining_letters_tally = subtract_buffs(word_tally, answer1_tally)
+    remaining_letters_tally = remaining_letter_count_tally(word_tally, answer1_tally)
 
     next unless remaining_letters_tally
 
@@ -110,9 +84,8 @@ def find_two_word_anagrams_v2(word:, wordlist:)
 
     next unless remaining_letters_count.positive?
 
-    (words_by_length[remaining_letters_count] || []).each do |answer2|
-      # puts "answer2: #{answer2}" if debug
-      answer_2_tally = tally_buff(word: answer2, tally_array_cache:)
+    (candidates_grouped_by_length[remaining_letters_count] || []).each do |answer2|
+      answer_2_tally = letter_count_tally(word: answer2, tally_cache:)
       results.add([answer1, answer2].sort) if remaining_letters_tally == answer_2_tally
     end
   end
@@ -125,7 +98,7 @@ puts "Got #{wordlist.length} entries in the wordlist"
 %w[documenting].each do |word|
   start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
-  answer = find_two_word_anagrams_v2(word:, wordlist:)
+  answer = find_two_word_anagrams(word:, wordlist:)
   puts "Found #{answer.length} results: #{answer}"
 
   end_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
