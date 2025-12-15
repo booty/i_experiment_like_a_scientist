@@ -22,80 +22,84 @@
 # Try to improve the performance of your solution but keep in mind that making it faster affects readability.
 # Continue to focus on readability first.
 
-def get_wordlist(path)
-  File.readlines(path).map(&:chomp).sort
+def get_wordlist_by_length(path)
+  File.readlines(path).map(&:chomp).sort_by(&:length).map(&:downcase)
 end
-
-def subtract_hash(h1, h2)
-  h2.each_with_object(h1.dup) do |item, result|
-    h2_key = item[0]
-    h2_value = item[1]
-    result[h2_key] = result[h2_key].to_i - h2_value
-  end.reject { |k, v| v.zero? }
-end
-
-def letters_match(tally1, tally2)
-  tally2.each do |tally2_key, tally2_value|
-    return false unless tally1[tally2_key].to_i == tally2_value
-  end
-  true
-end
-
-DEBUG_WORDS = %w[lap top]
 
 def tally(word:, tallycache:)
   tallycache[word] ||= word.chars.tally
 end
 
+# converts a word to a histogram stored in a standard ruby array
+def tally_array(word:, tally_array_cache:)
+  return tally_array_cache[word] if tally_array_cache[word]
+
+  result = Array.new(26) { 0 }
+  word.chars.each do |c|
+    result[c.ord - 97] += 1
+  rescue StandardError => e
+    puts "failed to calculate ord for #{c}"
+    raise e
+  end
+  tally_array_cache[word] = result
+end
+
+RANGE = (0..25)
+def subtract_tally_arrays(ary1, ary2)
+  result = Array.new(26)
+  RANGE.each do |idx|
+    return nil if (result[idx] = ary1[idx] - ary2[idx]).negative?
+  end
+  result
+end
+
 def find_two_word_anagrams_v2(word:, wordlist:)
   word = word.downcase
-  start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
   results = Set.new
 
-  wordlist_length = wordlist.length
   word_length = word.length
-  word_chars = word.chars
-  word_tally = word_chars.tally
-  tallycache = {}
+  tally_array_cache = {}
+  word_tally = tally_array(word:, tally_array_cache:)
   debug = false
 
   wordlist_filtered_sorted =
     wordlist
-    .select { |x| x.length < word_length }
-    .map(&:downcase)
-    .sort_by(&:length)
+    .select { |x| x.length < word_length }.sort_by { |x| x.length }
 
   words_by_length = wordlist_filtered_sorted.group_by(&:length)
 
-  # outer_wordlist = wordlist_filtered_sorted.select { |x| x.include?(word[0]) }
+  puts("Will examine #{wordlist_filtered_sorted.length} words in wordlist_filtered_sorted")
+  # puts(wordlist_filtered_sorted.join(" "))
 
   wordlist_filtered_sorted.each_with_index do |answer1, outer_index|
-    if outer_index % 1000 == 0
-      end_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      elapsed = end_time - start_time
-      puts("outer loop:#{outer_index}/#{wordlist_filtered_sorted.length} elapsed:#{elapsed.round(4)} seconds")
-    end
+    # if outer_index % 1000 == 0
+    #   end_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    #   elapsed = end_time - start_time
+    #   puts("outer loop:#{outer_index}/#{wordlist_filtered_sorted.length} elapsed:#{elapsed.round(4)} seconds")
+    # end
+    # debug = answer1 == "lap"
+    # puts("answer1: #{answer1}") if debug
     break if answer1.length > word_length / 2
 
-    wordlist_word_tally = tally(word: answer1, tallycache:) # wordlist_word_chars.tally
+    answer1_tally = tally_array(word: answer1, tally_array_cache:)
 
-    remaining_letters_tally = subtract_hash(word_tally, wordlist_word_tally)
+    # puts("answer1_tally:#{answer1_tally}") if debug
 
-    next if remaining_letters_tally.any? { |k, v| v.negative? }
+    remaining_letters_tally = subtract_tally_arrays(word_tally, answer1_tally)
 
-    next unless remaining_letters_tally.any? { |k, v| v.positive? }
+    next unless remaining_letters_tally && remaining_letters_tally.any?(&:positive?)
 
-    remaining_letters_count = remaining_letters_tally.values.sum
+    remaining_letters_count = remaining_letters_tally.sum
     (words_by_length[remaining_letters_count] || []).each do |answer2|
-      answer_2_tally = tally(word: answer2, tallycache:)
-      # binding.irb if answer1 == "lap" && answer2 == "top"
+      # puts "answer2: #{answer2}" if debug
+      answer_2_tally = tally_array(word: answer2, tally_array_cache:)
       results.add([answer1, answer2].sort) if remaining_letters_tally == answer_2_tally
     end
   end
   results.sort
 end
 
-wordlist = get_wordlist("words_alpha_sorted.txt")
+wordlist = get_wordlist_by_length("words_alpha_sorted.txt")
 puts "Got #{wordlist.length} entries in the wordlist"
 
 %w[documenting].each do |word|
