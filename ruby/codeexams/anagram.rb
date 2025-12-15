@@ -26,29 +26,56 @@ def get_wordlist_by_length(path)
   File.readlines(path).map(&:chomp).sort_by(&:length).map(&:downcase)
 end
 
-def tally(word:, tallycache:)
-  tallycache[word] ||= word.chars.tally
-end
+# def tally(word:, tallycache:)
+#   tallycache[word] ||= word.chars.tally
+# end
 
-# converts a word to a histogram stored in a standard ruby array
-def tally_array(word:, tally_array_cache:)
+# # converts a word to a histogram stored in a standard ruby array
+# def tally_array(word:, tally_array_cache:)
+#   return tally_array_cache[word] if tally_array_cache[word]
+
+#   result = Array.new(26) { 0 }
+#   word.chars.each do |c|
+#     result[c.ord - 97] += 1
+#   rescue StandardError => e
+#     puts "failed to calculate ord for #{c}"
+#     raise e
+#   end
+#   tally_array_cache[word] = result
+# end
+
+def tally_buff(word:, tally_array_cache:)
   return tally_array_cache[word] if tally_array_cache[word]
 
-  result = Array.new(26) { 0 }
+  buf = "\x00" * 26
+  buf.force_encoding(Encoding::BINARY)
+
   word.chars.each do |c|
-    result[c.ord - 97] += 1
-  rescue StandardError => e
-    puts "failed to calculate ord for #{c}"
-    raise e
+    pos = c.ord - 97
+    buf.setbyte(pos, buf.getbyte(pos) + 1)
   end
-  tally_array_cache[word] = result
+
+  tally_array_cache[word] = buf
 end
 
 RANGE = (0..25)
-def subtract_tally_arrays(ary1, ary2)
-  result = Array.new(26)
-  RANGE.each do |idx|
-    return nil if (result[idx] = ary1[idx] - ary2[idx]).negative?
+# def subtract_bufs(ary1, ary2)
+#   result = Array.new(26)
+#   RANGE.each do |idx|
+#     return nil if (result[idx] = ary1[idx] - ary2[idx]).negative?
+#   end
+#   result
+# end
+
+def subtract_buffs(buf1, buf2)
+  result = "\x00" * 26
+  result.force_encoding(Encoding::BINARY)
+
+  RANGE.each do |pos|
+    val = buf1.getbyte(pos) - buf2.getbyte(pos)
+    return nil if val.negative?
+
+    result.setbyte(pos, val)
   end
   result
 end
@@ -59,7 +86,7 @@ def find_two_word_anagrams_v2(word:, wordlist:)
 
   word_length = word.length
   tally_array_cache = {}
-  word_tally = tally_array(word:, tally_array_cache:)
+  word_tally = tally_buff(word:, tally_array_cache:)
   debug = false
 
   wordlist_filtered_sorted =
@@ -69,30 +96,23 @@ def find_two_word_anagrams_v2(word:, wordlist:)
   words_by_length = wordlist_filtered_sorted.group_by(&:length)
 
   puts("Will examine #{wordlist_filtered_sorted.length} words in wordlist_filtered_sorted")
-  # puts(wordlist_filtered_sorted.join(" "))
 
   wordlist_filtered_sorted.each_with_index do |answer1, outer_index|
-    # if outer_index % 1000 == 0
-    #   end_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-    #   elapsed = end_time - start_time
-    #   puts("outer loop:#{outer_index}/#{wordlist_filtered_sorted.length} elapsed:#{elapsed.round(4)} seconds")
-    # end
-    # debug = answer1 == "lap"
-    # puts("answer1: #{answer1}") if debug
     break if answer1.length > word_length / 2
 
-    answer1_tally = tally_array(word: answer1, tally_array_cache:)
+    answer1_tally = tally_buff(word: answer1, tally_array_cache:)
 
-    # puts("answer1_tally:#{answer1_tally}") if debug
+    remaining_letters_tally = subtract_buffs(word_tally, answer1_tally)
 
-    remaining_letters_tally = subtract_tally_arrays(word_tally, answer1_tally)
-
-    next unless remaining_letters_tally && remaining_letters_tally.any?(&:positive?)
+    next unless remaining_letters_tally
 
     remaining_letters_count = remaining_letters_tally.sum
+
+    next unless remaining_letters_count.positive?
+
     (words_by_length[remaining_letters_count] || []).each do |answer2|
       # puts "answer2: #{answer2}" if debug
-      answer_2_tally = tally_array(word: answer2, tally_array_cache:)
+      answer_2_tally = tally_buff(word: answer2, tally_array_cache:)
       results.add([answer1, answer2].sort) if remaining_letters_tally == answer_2_tally
     end
   end
