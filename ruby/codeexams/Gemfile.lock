@@ -9,7 +9,6 @@ GEM
     erb (6.0.0)
     faker (3.5.3)
       i18n (>= 1.8.11, < 2)
-    ffi (1.17.2)
     ffi (1.17.2-aarch64-linux-gnu)
     ffi (1.17.2-aarch64-linux-musl)
     ffi (1.17.2-arm-linux-gnu)
@@ -110,6 +109,7 @@ GEM
       rubocop-ast (>= 1.47.1, < 2.0)
     ruby-progressbar (1.13.0)
     shellany (0.0.1)
+    stackprof (0.2.27)
     stringio (3.1.8)
     thor (1.4.0)
     tsort (0.2.0)
@@ -140,6 +140,7 @@ DEPENDENCIES
   rubocop
   rubocop-minitest
   rubocop-performance
+  stackprof (~> 0.2.27)
 
 BUNDLED WITH
    2.7.2

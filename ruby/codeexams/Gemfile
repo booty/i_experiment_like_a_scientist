@@ -15,3 +15,5 @@ group :development, :test do
 end
 
 gem "benchmark-ips"
+
+gem "stackprof", "~> 0.2.27"
