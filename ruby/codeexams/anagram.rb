@@ -22,7 +22,8 @@
 # Try to improve the performance of your solution but keep in mind that making it faster affects readability.
 # Continue to focus on readability first.
 
-require "stackprof"
+# uncomment this if running on Ruby < 3.1
+# require "set"
 
 WORDLIST_PATH = "words_alpha_sorted.txt"
 
@@ -80,7 +81,7 @@ def find_two_word_anagrams(word:)
 
   candidates_sorted_by_length = get_wordlist_by_length(path: WORDLIST_PATH, max_length: word_length - 1)
 
-  candidates_grouped_by_length = candidates_sorted_by_length.group_by { |x| x[0].length }
+  candidates_grouped_by_tally = candidates_sorted_by_length.group_by { |x| x[1] }
 
   candidates_sorted_by_length.each_with_index do |(answer1, answer1_tally), _outer_index|
     break if answer1.length > word_length / 2
@@ -89,19 +90,18 @@ def find_two_word_anagrams(word:)
 
     next unless remaining_letters_tally
 
-    # remaining_letters_count = remaining_letters_tally.sum
     remaining_letters_count = word.length - answer1.length
 
     next unless remaining_letters_count.positive?
 
-    (candidates_grouped_by_length[remaining_letters_count] || []).each do |(answer2, answer2_tally)|
-      results.add([answer1, answer2].sort) if remaining_letters_tally == answer2_tally
+    (candidates_grouped_by_tally[remaining_letters_tally] || []).each do |x|
+      results.add([answer1, x[0]].sort)
     end
   end
   results.sort
 end
 
-%w[documenting].each do |word|
+%w[fornication].each do |word|
   start_time = perf_time
 
   answer = find_two_word_anagrams(word:)
