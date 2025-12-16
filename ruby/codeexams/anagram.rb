@@ -47,8 +47,8 @@ def letter_count_tally(word)
   stringbuffer = "\x00" * 26
   stringbuffer.force_encoding(Encoding::BINARY)
 
-  word.chars.each do |c|
-    pos = c.ord - 97
+  word.each_byte do |b|
+    pos = b - 97
     stringbuffer.setbyte(pos, stringbuffer.getbyte(pos) + 1)
   end
 
