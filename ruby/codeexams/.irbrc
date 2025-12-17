@@ -7,7 +7,7 @@ class Jb
   end
 
   def self.h
-    [a: 1, b: 2, c: 3, d: 4, e: 5]
+    { a: 1, b: 2, c: 3, d: 4, e: 5 }
   end
 
   def self.aliases
@@ -17,8 +17,6 @@ end
 
 if (pp_successful = require "pp")
   IRB.conf[:INSPECT_MODE] = :pp
-else
-  puts "Pretty print not available"
 end
 
 def cl
