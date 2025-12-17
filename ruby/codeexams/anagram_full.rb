@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-WORDLIST_PATH = "words_alpha_sorted.txt"
+WORDLIST_PATH = "words-tiny.txt"
 
 # assumes both buffers are the same size
 # optimization: exits early and returns nil if anything is negative
@@ -65,31 +65,39 @@ def find_anagrams(tally:, wordlist:, debug_depth: 0)
 
     debug_word = debug_buffer_to_string(tally)
 
-    puts("#{indent}Word:#{debug_word} Looking at candidates w/ length: #{word_length} depth:#{debug_depth}")
+    # puts("#{indent}remaining letters:#{debug_word} Looking at candidates w/ length: #{word_length} depth:#{debug_depth}")
 
-    tally_hash.take(10).each do |anagram_tally, anagram_word|
+    tally_hash.each do |anagram_tally, anagram_word|
       remaining_tally = subtract_buffers(tally, anagram_tally)
 
       remaining_tally_sum = remaining_tally&.sum
 
-      puts("#{indent2}anagram_word:#{anagram_word} anagram_tally.length:#{anagram_tally.length} remaining:#{remaining_tally&.sum || 'fail'}")
-
       next if remaining_tally.nil?
-      return tally if remaining_tally_sum.zero?
 
-      # puts "let's dive"
+      print("#{indent2}anagram_word:#{anagram_word} anagram_tally.length:#{anagram_tally.length} remaining:#{remaining_tally&.sum || 'fail'}")
 
-      find_anagrams(tally: remaining_tally, wordlist:, debug_depth: debug_depth + 1)
+      if remaining_tally_sum.zero?
+        puts " SUCCESS!"
+        results << [anagram_word]
+      else
+        puts
+        temp_results = find_anagrams(tally: remaining_tally, wordlist:, debug_depth: debug_depth + 1)
+        # binding.irb if temp_results.any?
+        temp_results.each do |tr|
+          results << ([anagram_word] + tr)
+        end
+      end
     end
-    # for each matching word...
-    #   if there are letters remaining, call find_anagrams again recursively and accumulate the results
-    #   if there are exactly 0 letters remaining, add this word to the results
-    #
-    # return the accumlated results
   end
+  puts("#{indent2}Returning #{results} for depth: #{debug_depth}")
+  results
 end
 
 # puts debug_buffer_to_string(tally("ballbanger"))
 
-word = "ab"
-find_anagrams(tally: tally(word), wordlist: wordlist(path: WORDLIST_PATH))
+word = "catdog"
+results = find_anagrams(tally: tally(word), wordlist: wordlist(path: WORDLIST_PATH))
+# puts(results.map { |x| debug_buffer_to_string(x) })
+results.each do |result|
+  pp result
+end
