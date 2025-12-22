@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-WORDLIST_PATH = "google-10000-english.txt"
+WORDLIST_PATH = "words_alpha_sorted.txt"
 SHOW_PROGRESS = true
 # Kludge: all the wordlists I found included a lot of bizarre 1 and 2 letter words
 LEGAL_1_LETTER_WORDS = %w[a i]
@@ -121,11 +121,11 @@ def find_anagrams(tally:, remaining_len:, wordlist:, last_word: "", memo: {})
 end
 
 start = perf_time
-word = "face fucker"
+word = "documenting"
 word = word.delete(" ")
 wl = wordlist(path: WORDLIST_PATH)
 results = find_anagrams(tally: tally(word), remaining_len: word.length, wordlist: wl)
-puts("---[ Results (#{results.length}) ]\b")
+puts("---[ Results for \"#{word}\" (#{results.length}) ]---")
 results.sort.each do |result|
   puts result.join(" ")
 end
