@@ -1,0 +1,25 @@
+<h1>We Have Products!</h1>
+
+<%= link_to "Create New Product", new_product_path, class: "button" %>
+
+<table id="products">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @products.each do |product| %>
+      <tr>
+        <td><%= product.name %></td>
+        <td>
+          <%= link_to "Edit", edit_product_path(product), class: "button" %>
+        </td>
+        <td>
+          <%= button_to "Delete", product_path(product), method: :delete, data: { turbo_confirm: "Are you sure?" }, class: "button" %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
