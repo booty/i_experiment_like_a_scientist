@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-# Look at 2 through n-1
 def prime?(n)
   return false unless n.is_a?(Integer)
   return false if n < 2

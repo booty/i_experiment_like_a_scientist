@@ -18,6 +18,11 @@
   </div>
 
   <div>
+    <%= form.label :images, "Upload Images" %>
+    <%= form.file_field :images, multiple: true, accept: "image/*" %>
+  </div>
+
+  <div>
     <%= form.submit "Create Product" %>
     <%= link_to "Cancel", products_path %>
   </div>

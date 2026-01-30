@@ -1,0 +1,43 @@
+plugins: rubocop-performance
+
+AllCops:
+  NewCops: enable
+
+Style/StringLiterals:
+  Description: "Checks if uses of quotes match the configured preference."
+  StyleGuide: "https://github.com/bbatsov/ruby-style-guide#consistent-string-literals"
+  EnforcedStyle: double_quotes
+  Enabled: true
+
+Style/Documentation:
+  Description: "Document classes and non-namespace modules."
+  Enabled: false
+
+Style/EmptyMethod:
+  Enabled: false
+
+Style/MethodCallWithoutArgsParentheses:
+  Enabled: false
+
+Style/MultilineBlockChain:
+  Enabled: false
+
+Metrics/MethodLength:
+  Enabled: true
+  Max: 20
+
+Style/WhileUntilModifier:
+  Enabled: true
+  AutoCorrect: false
+
+Style/IfUnlessModifier:
+  Enabled: true
+  AutoCorrect: false
+# Style/Next:
+#   Enabled: false
+
+# Style/ReturnNil:
+#   Enabled: false
+
+# Style/GuardClause:
+#   Enabled: false

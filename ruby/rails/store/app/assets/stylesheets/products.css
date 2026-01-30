@@ -1,0 +1,159 @@
+/* Products stylesheet */
+
+/* General layout */
+h1 {
+  color: #333;
+  margin-bottom: 20px;
+}
+
+/* Buttons */
+.button {
+  display: inline-block;
+  padding: 8px 16px;
+  margin: 5px;
+  background-color: #007bff;
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.button:hover {
+  background-color: #0056b3;
+}
+
+/* Products table */
+#products {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  background-color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+#products thead {
+  background-color: #f8f9fa;
+}
+
+#products th,
+#products td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #dee2e6;
+}
+
+#products th {
+  font-weight: 600;
+  color: #495057;
+}
+
+#products tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+#products td img {
+  display: block;
+  border-radius: 4px;
+}
+
+/* Forms */
+form div {
+  margin-bottom: 15px;
+}
+
+form label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 600;
+  color: #495057;
+}
+
+form input[type="text"],
+form input[type="file"] {
+  width: 100%;
+  max-width: 400px;
+  padding: 8px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+form input[type="text"]:focus,
+form input[type="file"]:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+/* Error messages */
+div[style*="color: red"] {
+  background-color: #f8d7da;
+  color: #721c24;
+  padding: 12px;
+  border-radius: 4px;
+  border: 1px solid #f5c6cb;
+  margin-bottom: 20px;
+}
+
+div[style*="color: red"] h2 {
+  margin-top: 0;
+  font-size: 16px;
+}
+
+div[style*="color: red"] ul {
+  margin-bottom: 0;
+}
+
+/* Product show page */
+.product-images {
+  margin: 20px 0;
+}
+
+.product-images h2 {
+  font-size: 18px;
+  margin-bottom: 15px;
+  color: #495057;
+}
+
+.images-grid {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.images-grid img {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Image management in edit form */
+.current-images {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.image-container {
+  position: relative;
+}
+
+.image-container img {
+  display: block;
+  border-radius: 4px;
+  border: 1px solid #dee2e6;
+}
+
+.image-container button {
+  margin-top: 5px;
+  padding: 4px 8px;
+  font-size: 12px;
+  background-color: #dc3545;
+}
+
+.image-container button:hover {
+  background-color: #c82333;
+}

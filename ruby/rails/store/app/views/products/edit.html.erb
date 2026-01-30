@@ -17,6 +17,25 @@
     <%= form.text_field :name %>
   </div>
 
+  <% if @product.images.attached? %>
+    <div>
+      <label>Current Images:</label>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <% @product.images.each do |image| %>
+          <div>
+            <%= image_tag image.variant(resize_to_limit: [100, 100]), style: "max-width: 100px;" %>
+            <%= link_to "Remove", delete_image_product_path(@product, image_id: image.id), method: :delete, data: { turbo_method: :delete, turbo_confirm: "Remove this image?" }, style: "margin-top: 5px; display: block; text-align: center; padding: 4px 8px; background-color: #dc3545; color: white; text-decoration: none; border-radius: 4px; font-size: 12px;" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <div>
+    <%= form.label :images, "Add More Images" %>
+    <%= form.file_field :images, multiple: true, accept: "image/*" %>
+  </div>
+
   <div>
     <%= form.submit "Update Product" %>
     <%= link_to "Cancel", products_path %>

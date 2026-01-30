@@ -1,0 +1,18 @@
+<h1><%= @product.name %></h1>
+
+<% if @product.images.attached? %>
+  <div style="margin: 20px 0;">
+    <h2>Images</h2>
+    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+      <% @product.images.each do |image| %>
+        <%= image_tag image.variant(resize_to_limit: [400, 400]), style: "max-width: 400px; border: 1px solid #ccc;" %>
+      <% end %>
+    </div>
+  </div>
+<% end %>
+
+<div style="margin-top: 20px;">
+  <%= link_to "Edit", edit_product_path(@product), class: "button" %>
+  <%= button_to "Delete", product_path(@product), method: :delete, data: { turbo_confirm: "Are you sure?" }, class: "button" %>
+  <%= link_to "Back to Products", products_path, class: "button" %>
+</div>

@@ -5,6 +5,7 @@
 <table id="products">
   <thead>
     <tr>
+      <th>Image</th>
       <th>Name</th>
       <th>Actions</th>
     </tr>
@@ -12,8 +13,14 @@
   <tbody>
     <% @products.each do |product| %>
       <tr>
+        <td>
+          <% if product.images.attached? %>
+            <%= image_tag product.images.first.variant(resize_to_limit: [250, 250]), style: "max-width: 50px;" %>
+          <% end %>
+        </td>
         <td><%= product.name %></td>
         <td>
+          <%= link_to "View", product_path(product), class: "button" %>
           <%= link_to "Edit", edit_product_path(product), class: "button" %>
         </td>
         <td>

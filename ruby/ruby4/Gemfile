@@ -1,0 +1,12 @@
+# frozen_string_literal: true
+
+source "https://rubygems.org"
+
+# gem "rails"
+
+gem "guard", "~> 2.19"
+
+gem "rubocop", "~> 1.82"
+gem "rubocop-performance", "~> 1.26"
+
+gem "rb-readline", "~> 0.5.5"

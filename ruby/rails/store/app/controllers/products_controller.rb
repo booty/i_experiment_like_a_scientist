@@ -1,8 +1,11 @@
 class ProductsController < ApplicationController
-  before_action :set_product, only: [ :edit, :update, :destroy ]
+  before_action :set_product, only: [ :show, :edit, :update, :destroy, :delete_image ]
 
   def index
     @products = Product.all
+  end
+
+  def show
   end
 
   def new
@@ -23,7 +26,14 @@ class ProductsController < ApplicationController
   end
 
   def update
-    if @product.update(product_params)
+    @product.assign_attributes(product_params.except(:images))
+
+    # Append new images instead of replacing existing ones
+    if params[:product][:images].present?
+      @product.images.attach(params[:product][:images])
+    end
+
+    if @product.save
       redirect_to products_path, notice: "Product was successfully updated."
     else
       render :edit, status: :unprocessable_entity
@@ -35,6 +45,12 @@ class ProductsController < ApplicationController
     redirect_to products_path, notice: "Product was successfully deleted."
   end
 
+  def delete_image
+    image = @product.images.find(params[:image_id])
+    image.purge
+    redirect_to edit_product_path(@product), notice: "Image was successfully removed."
+  end
+
   private
 
   def set_product
@@ -42,6 +58,6 @@ class ProductsController < ApplicationController
   end
 
   def product_params
-    params.require(:product).permit(:name)
+    params.require(:product).permit(:name, images: [])
   end
 end
