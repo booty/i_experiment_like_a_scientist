@@ -25,8 +25,8 @@ class OcrResult
     @digits = ocr_digit_results
 
     @status = :ok
-    if ocr_digit_results.any? { |d| d.status == :unrecognized }
-      @status = :unrecognized
+    if ocr_digit_results.any? { |d| d.status != :ok }
+      @status = :err
     end
   end
 
@@ -38,8 +38,18 @@ class OcrResult
     end
   end
 
+  def to_str
+    digits.map do |d|
+      if d.status==:ok
+        d.digit
+      else
+        "?"
+      end
+    end.join
+  end
+
   def to_s
-    "OcrResult(to_i: #{to_i}, status: #{status})"
+    "OcrResult(to_i:#{to_i} to_str:#{to_str} status:#{status})"
   end
 end
 
@@ -88,7 +98,7 @@ class Ocr
     num_ocr_chars = line_length / 3
     result = Array.new(num_ocr_chars) { Array.new }
 
-    puts("lines:\n#{lines.join("\n")}\n")
+    # puts("lines:\n#{lines.join("\n")}\n")
 
 
     0.upto(num_ocr_chars-1) do |char_num|
@@ -103,7 +113,45 @@ class Ocr
     result
   end
 
-  def self.chars_to_digits(input)
+  def self.string_distance(str1, str2)
+    return 0 if str1==str2
+    return 999 if str1.length != str2.length
+    distance = 0
+    str1.length.times do |i|
+      distance += 1 if str1[i] != str2[i]
+    end
+    distance
+  end
+
+  def self.checksum(ints)
+    return nil unless ints.length == 9
+  end
+
+  def self.resolve_raw_digit(str)
+    canon_char = @@canon_digits[str]
+    if canon_char
+      return OcrDigitResult.new(raw: str, digit: canon_char, status: :ok)
+    end
+
+    candidates = @@canon_digits.select do |k,v|
+      dist = string_distance(k.join, str.join)
+      # puts("key:#{k} val:#{v} dist:#{dist}")
+      dist == 1
+    end
+
+    if candidates.length==1
+      return OcrDigitResult.new(raw: str, digit: candidates.values[0], status: :ok)
+    end
+
+    if candidates.length.zero?
+      return OcrDigitResult.new(raw: str, digit: nil, status: :illegible)
+    end
+
+    # puts "well that's ambiguous"
+    return OcrDigitResult.new(raw: str, digit: nil, status: :ambiguous)
+  end
+
+  def self.ocr(input)
     # todo: ensure input is a string?
     # extract the raw chars
     @@canon_digits ||= extract_chars(RAW_CANON_DIGITS).each_with_index.to_h
@@ -113,12 +161,8 @@ class Ocr
     # do "OCR" on each individual char, putting the results into an array
     results = []
     raw_digits.each do |rd|
-      canon_char = @@canon_digits[rd]
-      if canon_char
-        results << OcrDigitResult.new(raw: rd, digit: canon_char, status: :ok)
-      else
-        results << OcrDigitResult.new(raw: rd, digit: nil, status: :unrecognized)
-      end
+      results << resolve_raw_digit(rd)
+
     end
     # return the result object
     OcrResult.new(ocr_digit_results: results)
@@ -130,6 +174,26 @@ TEST_DIGITS =
   "  ||_||_|| |  | _| _||_||_ |_ \n" +
   "  ||_| _||_|  ||_  _|  | _||_|\n"
 
-result = Ocr.extract_chars(TEST_DIGITS)
-fuck = Ocr.chars_to_digits(TEST_DIGITS)
-puts fuck
+TEST_DIGITS_FIXABLE =
+  " _  _  _  _     _  _     _  _ \n" +
+  "  a|_||_|| |  | _| _||_||_ |_ \n" +
+  "  ||_| _||_|  ||_  _|  | _||_|\n"
+
+TEST_DIGITS_AMBIGUOUS =
+  " a  _  _  _     _  _     _  _ \n" +
+  "  ||_||_|| |  | _| _||_||_ |_ \n" +
+  "  ||_| _||_|  ||_  _|  | _||_|\n"
+TEST_DIGITS_ILLEGIBLE =
+  " _  _  _  _     _  _     _  _ \n" +
+  "|  |_||_|| |  | _| _||_||_ |_ \n" +
+  "| ||_| _||_|  ||_  _|  | _||_|\n"
+
+
+good_result = Ocr.ocr(TEST_DIGITS)
+puts good_result
+bad_result = Ocr.ocr(TEST_DIGITS_FIXABLE)
+puts bad_result
+ambiguous_result = Ocr.ocr(TEST_DIGITS_AMBIGUOUS)
+puts ambiguous_result
+illegible_result = Ocr.ocr(TEST_DIGITS_ILLEGIBLE)
+puts illegible_result
